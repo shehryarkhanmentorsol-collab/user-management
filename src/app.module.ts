@@ -7,6 +7,8 @@ import { PostsModule } from './posts/posts.module';
 import { CommentsModule } from './comments/comments.module';
 import { ReactionsModule } from './reactions/reactions.module';
 
+// migrations import not required here, but path added above
+
 @Module({
   imports: [
     // Load .env globally
@@ -23,6 +25,7 @@ import { ReactionsModule } from './reactions/reactions.module';
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        migrations: [__dirname + '/../db/migrations/*{.ts,.js}'],
         synchronize: config.get('NODE_ENV') !== 'production', // NEVER true in prod
         logging: config.get('NODE_ENV') === 'development',
       }),
