@@ -51,23 +51,15 @@ export class ReactionsService {
   }
 
   async getReactionCounts(postId: number): Promise<Record<string, number>> {
-    // GROUP BY query to count each reaction type
-    const counts = await this.reactionRepo
-      .createQueryBuilder('reaction')
-      .select('reaction.type', 'type')
-      .addSelect('COUNT(reaction.id)', 'count')
-      .where('reaction.postId = :postId', { postId })
-      .groupBy('reaction.type')
-      .getRawMany<{ type: string; count: string }>();
+    // Fetch reactions for the post and accumulate counts in JS
+    const rows = await this.reactionRepo.find({ where: { postId }, select: { type: true }});
 
-    // Build result object with all types defaulting to 0
-    const result: Record<string, number> = {
-      like: 0, love: 0, wow: 0, sad: 0, angry: 0, total: 0,
-    };
-
-    for (const row of counts) {
-      result[row.type] = parseInt(row.count, 10);
-      result.total += result[row.type];
+    const result: Record<string, number> = { like: 0, love: 0, wow: 0, sad: 0, angry: 0, total: 0 };
+    for (const r of rows) {
+      const t = r.type;
+      if (!result[t]) result[t] = 0;
+      result[t] += 1;
+      result.total += 1;
     }
 
     return result;

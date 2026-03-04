@@ -32,3 +32,17 @@ export class LoginDto {
   @IsString()
   password: string;
 }
+
+// Response DTO for login endpoint
+export class LoginResponseDto {
+  accessToken: string;
+
+  user: {
+    id: number;
+    username: string;
+    email: string;
+    fullName?: string;
+    avatarUrl?: string;
+    createdAt: Date;
+  };
+}

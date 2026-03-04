@@ -18,6 +18,7 @@ export class UsersController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   getMe(@CurrentUser() user: User) {
+    console.log('Fetching profile for user:', user.id);
     return this.usersService.getProfile(user.id);
   }
 
@@ -40,7 +41,7 @@ export class UsersController {
     return this.usersService.findByUsername(username);
   }
 
-  // ─── Follow / Unfollow ────────────────────────────────────────────────────────
+  // ─── Follow / Unfollow 
 
   // POST /api/v1/users/:id/follow
   @Post(':id/follow')
@@ -64,7 +65,7 @@ export class UsersController {
     return this.usersService.unfollow(user.id, targetId);
   }
 
-  // ─── Followers / Following Lists ──────────────────────────────────────────────
+  // ─── Followers / Following Lists 
 
   // GET /api/v1/users/:id/followers
   @Get(':id/followers')
@@ -78,7 +79,7 @@ export class UsersController {
     return this.usersService.getFollowing(id);
   }
 
-  // ─── Follow Status ────────────────────────────────────────────────────────────
+  // ─── Follow Status 
 
   // GET /api/v1/users/:id/follow-status  (must be authenticated)
   @Get(':id/follow-status')

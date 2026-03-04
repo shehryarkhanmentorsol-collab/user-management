@@ -26,8 +26,10 @@ import { ReactionsModule } from './reactions/reactions.module';
         database: config.get('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         migrations: [__dirname + '/../db/migrations/*{.ts,.js}'],
-        synchronize: config.get('NODE_ENV') !== 'production', // NEVER true in prod
-        logging: config.get('NODE_ENV') === 'development',
+        // Using migrations: do not auto-sync schema in any environment
+        synchronize: false,
+        // Reduce logging noise in dev; set to ['warn','error'] or false to fully silence
+        logging: ['warn', 'error'],
       }),
       inject: [ConfigService],
     }),

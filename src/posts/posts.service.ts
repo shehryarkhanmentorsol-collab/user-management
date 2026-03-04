@@ -3,7 +3,7 @@ import {
   Injectable, NotFoundException, ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { Post } from '../common/database/posts/entities/post.entity';
 import { CreatePostDto, UpdatePostDto, SearchPostsDto } from './dto/posts.dto';
 import { PaginatedResponse } from '../common/pagination/pagination.dto';
@@ -23,41 +23,31 @@ export class PostsService {
   async findAll(dto: SearchPostsDto): Promise<PaginatedResponse<Post>> {
     const { page, limit, keyword, username, sortBy } = dto;
     const skip = (page - 1) * limit;
+    // Build where clause for findAndCount
+    const where: any = {};
+    if (keyword) where.content = Like(`%${keyword}%`);
+    if (username) where.user = { username: Like(`%${username}%`) };
 
-    // QueryBuilder for dynamic search + join
-    const qb = this.postRepo
-      .createQueryBuilder('post')
-      .leftJoinAndSelect('post.user', 'user')
-      .select([
-        'post.id', 'post.content', 'post.mediaUrl',
-        'post.likeCount', 'post.createdAt',
-        'user.id', 'user.username', 'user.avatarUrl',
-      ]);
-
-    if (keyword) {
-      qb.andWhere('post.content LIKE :keyword', { keyword: `%${keyword}%` });
-    }
-
-    if (username) {
-      qb.andWhere('user.username LIKE :username', { username: `%${username}%` });
-    }
-
-    // Sorting
+    // Build order
+    const order: any = {};
     switch (sortBy) {
       case 'oldest':
-        qb.orderBy('post.createdAt', 'ASC');
+        order.createdAt = 'ASC';
         break;
       case 'mostLiked':
-        qb.orderBy('post.likeCount', 'DESC');
+        order.likeCount = 'DESC';
         break;
-      default: // newest
-        qb.orderBy('post.createdAt', 'DESC');
+      default:
+        order.createdAt = 'DESC';
     }
 
-    const [data, total] = await qb
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount(); // returns [rows, total count]
+    const [data, total] = await this.postRepo.findAndCount({
+      where,
+      relations: ['user'],
+      order,
+      skip,
+      take: limit,
+    });
 
     return new PaginatedResponse(data, total, page, limit);
   }
@@ -86,11 +76,7 @@ export class PostsService {
 
   // Called internally by ReactionsService to update denormalized count
   async updateLikeCount(postId: number, delta: number): Promise<void> {
-    await this.postRepo
-      .createQueryBuilder()
-      .update(Post)
-      .set({ likeCount: () => `likeCount + ${delta}` })
-      .where('id = :id', { id: postId })
-      .execute();
+    // Use repository increment helper to atomically update the counter
+    await this.postRepo.increment({ id: postId }, 'likeCount', delta);
   }
 }

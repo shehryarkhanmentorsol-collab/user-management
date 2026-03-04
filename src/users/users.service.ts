@@ -34,24 +34,19 @@ export class UsersService {
   }
 
   async getProfile(id: number) {
-    const user = await this.userRepo
-      .createQueryBuilder('user')
-      .where('user.id = :id', { id })
-      .loadRelationCountAndMap(
-        'user.followersCount',
-        'user.followerRelations',
-        'fr',
-        (qb) => qb.where('fr.isActive = true'),
-      )
-      .loadRelationCountAndMap(
-        'user.followingCount',
-        'user.followingRelations',
-        'fg',
-        (qb) => qb.where('fg.isActive = true'),
-      )
-      .getOne();
-
+    const user = await this.userRepo.findOne({
+      where: { id },
+      relations: ['followerRelations', 'followingRelations'],
+    });
     if (!user) throw new NotFoundException(`User #${id} not found`);
+
+    // Compute active counts from the loaded relations (match pattern using `relations`)
+    const followersCount = (user.followerRelations || []).filter((r) => r.isActive).length;
+    const followingCount = (user.followingRelations || []).filter((r) => r.isActive).length;
+
+    (user as any).followersCount = followersCount;
+    (user as any).followingCount = followingCount;
+
     return user;
   }
 

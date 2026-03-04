@@ -20,7 +20,7 @@ export class User {
   @Column({ unique: true, length: 100 })
   email: string;
 
-  @Column({ select: false }) // never returned in queries by default
+  @Column()
   password: string;
 
   @Column({ nullable: true, length: 100 })
